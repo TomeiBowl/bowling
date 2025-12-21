@@ -3,29 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ボウリング メンバー提出</title>
+    <title>ボウリング メンバー提出フォーム</title>
     <style>
-        body { font-family: sans-serif; margin: 10px; background-color: #f4f7f6; color: #333; }
-        .container { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
+        body { font-family: sans-serif; margin: 10px; background-color: #f4f7f6; color: #333; line-height: 1.4; }
+        .container { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); max-width: 550px; margin: auto; }
         .section { background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 15px; }
-        h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5px; margin-bottom: 10px; }
+        h2 { text-align: center; color: #2c3e50; margin-top: 0; }
+        h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5px; margin-bottom: 15px; font-size: 1.1em; }
         label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
+        
         input[type="text"], input[type="datetime-local"], input[type="tel"], select { 
-            width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; margin-bottom: 10px; 
+            width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; margin-bottom: 12px; 
         }
-        .member-block { border-bottom: 1px dashed #eee; padding-bottom: 10px; margin-bottom: 10px; }
+        
+        .member-block { border-bottom: 1px dashed #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        .member-block:last-child { border-bottom: none; }
         .member-options { display: flex; gap: 5px; }
-        .btn-add { background-color: #3498db; color: white; border: none; padding: 15px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 1.1em; font-weight: bold; margin-bottom: 10px; }
+        .member-options select { font-size: 14px; padding: 8px 4px; }
         
-        /* 送信ボタン（通常：緑） */
-        .btn-submit { background-color: #27ae60; color: white; border: none; padding: 20px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 1.3em; font-weight: bold; margin-top: 10px; }
+        .btn-add { background-color: #3498db; color: white; border: none; padding: 15px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 1.1em; font-weight: bold; margin-bottom: 10px; transition: 0.2s; }
+        .btn-add:hover { background-color: #2980b9; }
         
-        /* 送信済み（グレー） */
+        .btn-submit { background-color: #27ae60; color: white; border: none; padding: 20px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 1.3em; font-weight: bold; margin-top: 10px; transition: 0.3s; }
         .btn-submit:disabled { background-color: #95a5a6 !important; cursor: not-allowed; opacity: 0.8; }
         
-        .cart-item { background: #f9f9f9; border-left: 5px solid #3498db; padding: 10px; margin-bottom: 10px; position: relative; font-size: 0.9em; }
-        .edit-btn { position: absolute; right: 5px; top: 10px; background: #f39c12; color: white; border: none; border-radius: 3px; cursor: pointer; padding: 5px 10px; }
-        .success-banner { display: none; background: #d4edda; color: #155724; padding: 10px; border-radius: 5px; text-align: center; margin-top: 10px; font-weight: bold; border: 1px solid #c3e6cb; }
+        .cart-item { background: #f9f9f9; border-left: 5px solid #3498db; padding: 12px; margin-bottom: 10px; position: relative; font-size: 0.95em; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .edit-btn { position: absolute; right: 8px; top: 12px; background: #f39c12; color: white; border: none; border-radius: 3px; cursor: pointer; padding: 6px 12px; font-size: 0.85em; }
+        
+        .success-banner { display: none; background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; text-align: center; margin-top: 15px; font-weight: bold; border: 1px solid #c3e6cb; }
     </style>
 </head>
 <body>
@@ -34,80 +39,102 @@
     <h2>ボウリング メンバー提出</h2>
 
     <div class="section">
-        <h3>基本情報</h3>
-        <label>団体名</label><input type="text" id="groupName" oninput="resetSubmitBtn()">
-        <label>予約日時</label><input type="datetime-local" id="reserveDate" oninput="resetSubmitBtn()">
-        <label>幹事名</label><input type="text" id="kanjiName" oninput="resetSubmitBtn()">
-        <label>電話番号</label><input type="tel" id="tel" oninput="resetSubmitBtn()">
+        <h3>1. 基本情報</h3>
+        <label>団体名（シート名になります）</label>
+        <input type="text" id="groupName" placeholder="例：株式会社サンプル" oninput="resetSubmitBtn()">
+        
+        <label>予約日時</label>
+        <input type="datetime-local" id="reserveDate" oninput="resetSubmitBtn()">
+        
+        <label>幹事名</label>
+        <input type="text" id="kanjiName" placeholder="お名前" oninput="resetSubmitBtn()">
+        
+        <label>電話番号</label>
+        <input type="tel" id="tel" placeholder="090-0000-0000" oninput="resetSubmitBtn()">
     </div>
     
     <div class="section">
-        <h3>メンバー入力</h3>
-        <label>レーン選択</label><select id="laneNumber"></select>
+        <h3>2. メンバー入力</h3>
+        <label>レーン選択</label>
+        <select id="laneNumber"></select>
+
         <div id="memberContainer"></div>
+        
         <button id="addBtn" class="btn-add" onclick="addToCart()">このレーンをリストに追加</button>
     </div>
 
     <div class="section">
-        <h3>提出リスト (確認用)</h3>
-        <div id="cartList">まだ追加されていません</div>
+        <h3>3. 提出リスト (送信前に確認)</h3>
+        <div id="cartList" style="color: #7f8c8d; font-size: 0.9em; margin-bottom: 10px;">まだ追加されていません</div>
+        
         <button id="submitBtn" class="btn-submit" onclick="submitAll()" disabled>全内容を送信する</button>
         <div id="successBanner" class="success-banner">✅ 送信が完了しました</div>
     </div>
 </div>
 
 <script>
-    // ★最新のGASのデプロイURLをここに貼り付けてください
-    const url = "https://script.google.com/macros/s/AKfycbzlLNHBUGNIF46zrtb-YB-UusMErfMoPGRAMtLtTrv9BnXYaCNDP71aqlAoZYcb369s/exec"; 
+    // ★【重要】あなたのGoogle Apps Scriptの新しいURLをここに貼り付けてください
+    const url = "https://script.google.com/macros/s/AKfycbxSTdSXbAhol9wER6SUYQ7U9mUVrGraKTt5OaQmGHCnDTDEE0UIEJ3NszW-T7QyIuwk/exec"; 
     
     let cart = [];
+    const MAX_LANES = 48;
 
-    // 入力欄生成
+    // メンバー入力欄（最大4名）の自動生成
     const memberContainer = document.getElementById('memberContainer');
     for (let i = 1; i <= 4; i++) {
         memberContainer.innerHTML += `
             <div class="member-block">
                 <label>ボウラ名 ${i}</label>
-                <input type="text" class="m-name" placeholder="氏名">
+                <input type="text" class="m-name" placeholder="氏名を入力" oninput="resetSubmitBtn()">
                 <div class="member-options">
-                    <select class="m-sex"><option value="1">男</option><option value="2">女</option></select>
-                    <select class="m-grade">
-                        <option value="一般">一般</option><option value="幼児">幼児</option><option value="小1">小1</option><option value="小2">小2</option><option value="小3">小3</option>
-                        <option value="小4">小4</option><option value="小5">小5</option><option value="小6">小6</option><option value="中学生">中学生</option><option value="高校生">高校生</option>
+                    <select class="m-sex" onchange="resetSubmitBtn()"><option value="1">男</option><option value="2">女</option></select>
+                    <select class="m-grade" onchange="resetSubmitBtn()">
+                        <option value="一般">一般</option><option value="幼児">幼児</option><option value="小1">小1</option>
+                        <option value="小2">小2</option><option value="小3">小3</option><option value="小4">小4</option>
+                        <option value="小5">小5</option><option value="小6">小6</option><option value="中学生">中学生</option><option value="高校生">高校生</option>
                     </select>
-                    <select class="m-bumper"><option value="バンパー無し">バンパー無し</option><option value="バンパー有り">バンパー有り</option></select>
+                    <select class="m-bumper" onchange="resetSubmitBtn()">
+                        <option value="バンパー無し">バンパー無し</option>
+                        <option value="バンパー有り">バンパー有り</option>
+                    </select>
                 </div>
             </div>`;
     }
 
-    function updateLaneOptions(selectedLane = null) {
+    // レーン番号プルダウンの生成（重複除外機能付き）
+    function updateLaneOptions(selectedLaneText = null) {
         const laneSelect = document.getElementById('laneNumber');
         laneSelect.innerHTML = "";
-        for (let i = 1; i <= 48; i++) {
+        
+        for (let i = 1; i <= MAX_LANES; i++) {
             const laneText = i + "番レーン";
             const alreadyInCart = cart.some(item => item.lane === laneText);
-            if (!alreadyInCart || laneText === selectedLane) {
+            
+            // リストにない、または現在修正中のレーンのみ表示
+            if (!alreadyInCart || laneText === selectedLaneText) {
                 let opt = document.createElement('option');
                 opt.value = i; opt.innerText = laneText;
                 laneSelect.appendChild(opt);
             }
         }
     }
-    window.onload = updateLaneOptions;
 
-    // 送信ボタンを通常状態（緑）に戻す関数
+    window.onload = () => updateLaneOptions();
+
+    // 入力や修正があったら送信ボタンを復活させる
     function resetSubmitBtn() {
-        const sBtn = document.getElementById('submitBtn');
         if (cart.length > 0) {
+            const sBtn = document.getElementById('submitBtn');
             sBtn.disabled = false;
             sBtn.innerText = "全内容を送信する";
-            sBtn.style.backgroundColor = "#27ae60";
             document.getElementById('successBanner').style.display = 'none';
         }
     }
 
+    // リストに追加
     function addToCart() {
         const laneVal = document.getElementById('laneNumber').value;
+        const laneText = laneVal + "番レーン";
         const names = document.getElementsByClassName('m-name');
         const sexes = document.getElementsByClassName('m-sex');
         const grades = document.getElementsByClassName('m-grade');
@@ -116,29 +143,50 @@
         let members = [];
         for(let i=0; i<4; i++) {
             if(names[i].value.trim() !== "") {
-                members.push({ name: names[i].value, sex: sexes[i].value, grade: grades[i].value, bumper: bumpers[i].value });
+                members.push({
+                    name: names[i].value,
+                    sex: sexes[i].value,
+                    grade: grades[i].value,
+                    bumper: bumpers[i].value
+                });
             }
         }
+
         if(members.length === 0) { alert("ボウラ名を1名以上入力してください"); return; }
 
-        const laneText = laneVal + "番レーン";
+        // 同じレーンがあれば上書き、なければ追加
         const existingIdx = cart.findIndex(item => item.lane === laneText);
-        if (existingIdx > -1) { cart[existingIdx] = { lane: laneText, members: members }; }
-        else { cart.push({ lane: laneText, members: members }); }
+        if (existingIdx > -1) {
+            cart[existingIdx] = { lane: laneText, members: members };
+        } else {
+            cart.push({ lane: laneText, members: members });
+        }
 
         renderCart();
-        for(let n of names) n.value = "";
-        updateLaneOptions();
-        
-        // 修正や追加があったらボタンをリセット
+        clearInputFields();
+        updateLaneOptions(); // レーン選択肢を更新
         resetSubmitBtn();
+        
         document.getElementById('addBtn').innerText = "このレーンをリストに追加";
         document.getElementById('laneNumber').disabled = false;
     }
 
+    // 入力欄をクリア
+    function clearInputFields() {
+        const names = document.getElementsByClassName('m-name');
+        for(let n of names) n.value = "";
+    }
+
+    // リストの描画
     function renderCart() {
         const list = document.getElementById('cartList');
+        if (cart.length === 0) {
+            list.innerHTML = "まだ追加されていません";
+            return;
+        }
+        // レーン番号順にソート
         cart.sort((a, b) => parseInt(a.lane) - parseInt(b.lane));
+        
         list.innerHTML = cart.map((item) => `
             <div class="cart-item">
                 <button class="edit-btn" onclick="editItem('${item.lane}')">修正</button>
@@ -148,30 +196,42 @@
         `).join('');
     }
 
+    // 修正機能
     function editItem(laneText) {
         const item = cart.find(c => c.lane === laneText);
-        updateLaneOptions(laneText);
+        updateLaneOptions(laneText); // 修正するレーンを選択肢に復活
         document.getElementById('laneNumber').value = laneText.replace("番レーン", "");
-        document.getElementById('laneNumber').disabled = true;
+        document.getElementById('laneNumber').disabled = true; // 修正中はレーン変更不可
+        
         const names = document.getElementsByClassName('m-name');
         const sexes = document.getElementsByClassName('m-sex');
         const grades = document.getElementsByClassName('m-grade');
         const bumpers = document.getElementsByClassName('m-bumper');
+
+        clearInputFields();
         item.members.forEach((m, i) => {
-            names[i].value = m.name; sexes[i].value = m.sex; grades[i].value = m.grade; bumpers[i].value = m.bumper;
+            names[i].value = m.name;
+            sexes[i].value = m.sex;
+            grades[i].value = m.grade;
+            bumpers[i].value = m.bumper;
         });
+
         document.getElementById('addBtn').innerText = "修正を反映する";
         window.scrollTo(0, 0);
     }
 
+    // 全データ一括送信
     async function submitAll() {
-        if(!confirm("送信します。よろしいですか？")) return;
+        const groupName = document.getElementById('groupName').value.trim();
+        if(!groupName) { alert("団体名を入力してください"); return; }
+        if(!confirm("この内容で送信します。よろしいですか？")) return;
+        
         const btn = document.getElementById('submitBtn');
         btn.disabled = true;
         btn.innerText = "送信中...";
 
         const payload = {
-            groupName: document.getElementById('groupName').value,
+            groupName: groupName,
             reserveDate: document.getElementById('reserveDate').value,
             kanjiName: document.getElementById('kanjiName').value,
             tel: document.getElementById('tel').value,
@@ -180,12 +240,14 @@
 
         try {
             await fetch(url, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
+            
+            // 送信完了後の表示
             btn.innerText = "送信済み";
             btn.disabled = true;
             document.getElementById('successBanner').style.display = 'block';
-            alert("送信が完了しました！");
+            alert("送信が完了しました！そのまま画面をスタッフへお見せください。");
         } catch (e) {
-            alert("エラーが発生しました。");
+            alert("エラーが発生しました。インターネット接続を確認してください。");
             btn.disabled = false;
             btn.innerText = "全内容を送信する";
         }
