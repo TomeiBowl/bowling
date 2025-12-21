@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ボウリング メンバー表一括提出</title>
+    <title>ボウリング メンバー提出</title>
     <style>
         body { font-family: sans-serif; margin: 10px; background-color: #f4f7f6; color: #333; }
         .container { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
         .section { background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 15px; }
-        h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5px; }
+        h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5px; margin-bottom: 10px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
         input[type="text"], input[type="datetime-local"], input[type="tel"], select { 
             width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; margin-bottom: 10px; 
@@ -17,15 +17,15 @@
         .member-options { display: flex; gap: 5px; }
         .btn-add { background-color: #3498db; color: white; border: none; padding: 15px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 1.1em; font-weight: bold; margin-bottom: 10px; }
         
-        /* 送信ボタンのスタイル */
-        .btn-submit { background-color: #27ae60; color: white; border: none; padding: 20px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 1.3em; font-weight: bold; width: 100%; margin-top: 10px; }
+        /* 送信ボタン（通常：緑） */
+        .btn-submit { background-color: #27ae60; color: white; border: none; padding: 20px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 1.3em; font-weight: bold; margin-top: 10px; }
         
-        /* 送信済み（グレー）の状態 */
-        .btn-submit:disabled { background-color: #95a5a6 !important; cursor: not-allowed; }
+        /* 送信済み（グレー） */
+        .btn-submit:disabled { background-color: #95a5a6 !important; cursor: not-allowed; opacity: 0.8; }
         
         .cart-item { background: #f9f9f9; border-left: 5px solid #3498db; padding: 10px; margin-bottom: 10px; position: relative; font-size: 0.9em; }
         .edit-btn { position: absolute; right: 5px; top: 10px; background: #f39c12; color: white; border: none; border-radius: 3px; cursor: pointer; padding: 5px 10px; }
-        .status-msg { color: #27ae60; font-weight: bold; text-align: center; margin-top: 10px; font-size: 1.1em; display: none; }
+        .success-banner { display: none; background: #d4edda; color: #155724; padding: 10px; border-radius: 5px; text-align: center; margin-top: 10px; font-weight: bold; border: 1px solid #c3e6cb; }
     </style>
 </head>
 <body>
@@ -35,20 +35,15 @@
 
     <div class="section">
         <h3>基本情報</h3>
-        <label>団体名</label>
-        <input type="text" id="groupName" placeholder="例：株式会社〇〇">
-        <label>予約日時</label>
-        <input type="datetime-local" id="reserveDate">
-        <label>幹事名</label>
-        <input type="text" id="kanjiName" placeholder="お名前">
-        <label>電話番号</label>
-        <input type="tel" id="tel" placeholder="090-0000-0000">
+        <label>団体名</label><input type="text" id="groupName" oninput="resetSubmitBtn()">
+        <label>予約日時</label><input type="datetime-local" id="reserveDate" oninput="resetSubmitBtn()">
+        <label>幹事名</label><input type="text" id="kanjiName" oninput="resetSubmitBtn()">
+        <label>電話番号</label><input type="tel" id="tel" oninput="resetSubmitBtn()">
     </div>
     
     <div class="section">
         <h3>メンバー入力</h3>
-        <label>レーン選択</label>
-        <select id="laneNumber"></select>
+        <label>レーン選択</label><select id="laneNumber"></select>
         <div id="memberContainer"></div>
         <button id="addBtn" class="btn-add" onclick="addToCart()">このレーンをリストに追加</button>
     </div>
@@ -57,14 +52,15 @@
         <h3>提出リスト (確認用)</h3>
         <div id="cartList">まだ追加されていません</div>
         <button id="submitBtn" class="btn-submit" onclick="submitAll()" disabled>全内容を送信する</button>
-        <div id="statusMsg" class="status-msg">✅ 送信が完了しました</div>
+        <div id="successBanner" class="success-banner">✅ 送信が完了しました</div>
     </div>
 </div>
 
 <script>
+    // ★最新のGASのデプロイURLをここに貼り付けてください
     const url = "https://script.google.com/macros/s/AKfycbzlLNHBUGNIF46zrtb-YB-UusMErfMoPGRAMtLtTrv9BnXYaCNDP71aqlAoZYcb369s/exec"; 
+    
     let cart = [];
-    const MAX_LANES = 48;
 
     // 入力欄生成
     const memberContainer = document.getElementById('memberContainer');
@@ -87,7 +83,7 @@
     function updateLaneOptions(selectedLane = null) {
         const laneSelect = document.getElementById('laneNumber');
         laneSelect.innerHTML = "";
-        for (let i = 1; i <= MAX_LANES; i++) {
+        for (let i = 1; i <= 48; i++) {
             const laneText = i + "番レーン";
             const alreadyInCart = cart.some(item => item.lane === laneText);
             if (!alreadyInCart || laneText === selectedLane) {
@@ -97,8 +93,18 @@
             }
         }
     }
+    window.onload = updateLaneOptions;
 
-    window.onload = () => updateLaneOptions();
+    // 送信ボタンを通常状態（緑）に戻す関数
+    function resetSubmitBtn() {
+        const sBtn = document.getElementById('submitBtn');
+        if (cart.length > 0) {
+            sBtn.disabled = false;
+            sBtn.innerText = "全内容を送信する";
+            sBtn.style.backgroundColor = "#27ae60";
+            document.getElementById('successBanner').style.display = 'none';
+        }
+    }
 
     function addToCart() {
         const laneVal = document.getElementById('laneNumber').value;
@@ -124,13 +130,10 @@
         for(let n of names) n.value = "";
         updateLaneOptions();
         
-        // リストに追加・修正した場合は送信ボタンを復活させる
-        const sBtn = document.getElementById('submitBtn');
-        sBtn.disabled = false;
-        sBtn.innerText = "全内容を送信する";
+        // 修正や追加があったらボタンをリセット
+        resetSubmitBtn();
         document.getElementById('addBtn').innerText = "このレーンをリストに追加";
         document.getElementById('laneNumber').disabled = false;
-        document.getElementById('statusMsg').style.display = 'none';
     }
 
     function renderCart() {
@@ -154,7 +157,6 @@
         const sexes = document.getElementsByClassName('m-sex');
         const grades = document.getElementsByClassName('m-grade');
         const bumpers = document.getElementsByClassName('m-bumper');
-        for(let n of names) n.value = "";
         item.members.forEach((m, i) => {
             names[i].value = m.name; sexes[i].value = m.sex; grades[i].value = m.grade; bumpers[i].value = m.bumper;
         });
@@ -163,7 +165,7 @@
     }
 
     async function submitAll() {
-        if(!confirm("この内容で送信します。送信後もリストは画面に残ります。")) return;
+        if(!confirm("送信します。よろしいですか？")) return;
         const btn = document.getElementById('submitBtn');
         btn.disabled = true;
         btn.innerText = "送信中...";
@@ -178,14 +180,12 @@
 
         try {
             await fetch(url, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
-            alert("送信が完了しました！");
-            
-            // 【重要】ボタンの表記を変えてグレーにする
-            btn.innerText = "送信済み (スタッフへお見せください)";
+            btn.innerText = "送信済み";
             btn.disabled = true;
-            document.getElementById('statusMsg').style.display = 'block';
+            document.getElementById('successBanner').style.display = 'block';
+            alert("送信が完了しました！");
         } catch (e) {
-            alert("送信エラーが発生しました。");
+            alert("エラーが発生しました。");
             btn.disabled = false;
             btn.innerText = "全内容を送信する";
         }
@@ -193,4 +193,3 @@
 </script>
 </body>
 </html>
-
