@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ボウリング メンバー表一括提出</title>
+    <style>
+        body { font-family: sans-serif; margin: 10px; background-color: #f4f7f6; color: #333; }
+        .container { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
+        .info { background: #e1f5fe; padding: 10px; border-radius: 5px; margin-bottom: 15px; color: #01579b; font-size: 0.85em; }
+        .input-group { background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
+        select, input[type="text"] { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; margin-bottom: 10px; }
+        .member-block { border-bottom: 1px dashed #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        .member-block:last-child { border-bottom: none; }
+        .member-options { display: flex; gap: 5px; }
+        .member-options select { font-size: 13px; padding: 8px 5px; }
+        .btn-add { background-color: #3498db; color: white; border: none; padding: 15px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 1.1em; font-weight: bold; margin-bottom: 20px; }
+        .btn-submit { background-color: #27ae60; color: white; border: none; padding: 20px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 1.3em; font-weight: bold; box-shadow: 0 4px 0 #219150; }
+        .btn-submit:disabled { background-color: #ccc; box-shadow: none; }
+        .cart-section { margin-top: 30px; border-top: 2px solid #3498db; padding-top: 20px; }
+        .cart-item { background: #f9f9f9; border-left: 5px solid #3498db; padding: 10px; margin-bottom: 10px; position: relative; font-size: 0.9em; }
+        .edit-btn { position: absolute; right: 5px; top: 10px; background: #f39c12; color: white; border: none; border-radius: 3px; cursor: pointer; padding: 5px 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>ボウリング メンバー表提出</h2>
+    <div id="groupDisplay" class="info">団体情報を確認中...</div>
+    
+    <div class="input-group">
+        <label id="laneLabel">現在の入力：レーン選択</label>
+        <select id="laneNumber"></select>
+
+        <div id="memberContainer"></div>
+        
+        <button id="addBtn" class="btn-add" onclick="addToCart()">このレーンをリストに追加</button>
+    </div>
+
+    <div class="cart-section">
+        <h3>提出待ちリスト</h3>
+        <div id="cartList" style="margin-bottom:20px;">まだ追加されていません</div>
+        <button id="submitBtn" class="btn-submit" onclick="submitAll()" disabled>全レーン分をまとめて送信</button>
+    </div>
+</div>
+
+<script>
+    const url = "https://script.google.com/macros/s/AKfycbzR05UFiTJtEYjP9Igq-3pbtCDhQLp-RXvdgbmxNC0ztBcaa6u7n_WSebSMoHYwSv1s/exec"; 
+    let cart = [];
+    const MAX_LANES = 48;
+
+    // 初期化：入力欄の生成
+    const memberContainer = document.getElementById('memberContainer');
+    for (let i = 1; i <= 4; i++) {
+        memberContainer.innerHTML += `
+            <div class="member-block">
+                <label>ボウラ名 ${i}</label>
+                <input type="text" class="m-name" placeholder="氏名を入力">
+                <div class="member-options">
+                    <select class="m-sex"><option value="男">男</option><option value="女">女</option></select>
+                    <select class="m-grade">
+                        <option value="一般">一般</option><option value="幼児">幼児</option><option value="小1">小1</option>
+                        <option value="小2">小2</option><option value="小3">小3</option><option value="小4">小4</option>
+                        <option value="小5">小5</option><option value="小6">小6</option><option value="中学生">中学生</option><option value="高校生">高校生</option>
+                    </select>
+                    <select class="m-bumper"><option value="バンパー無し">バンパー無し</option><option value="バンパー有り">バンパー有り</option></select>
+                </div>
+            </div>`;
+    }
+
+    // レーン選択肢を更新する関数（既にあるレーンは除外）
+    function updateLaneOptions(selectedLane = null) {
+        const laneSelect = document.getElementById('laneNumber');
+        const currentVal = laneSelect.value;
+        laneSelect.innerHTML = "";
+        
+        // リストに入っていないレーンだけを表示
+        for (let i = 1; i <= MAX_LANES; i++) {
+            const laneText = i + "番レーン";
+            const alreadyInCart = cart.some(item => item.lane === laneText);
+            
+            if (!alreadyInCart || laneText === selectedLane) {
+                let opt = document.createElement('option');
+                opt.value = i; opt.innerText = laneText;
+                laneSelect.appendChild(opt);
+            }
+        }
+        
+        // 修正モードでなければ、次のレーンを自動選択
+        if (!selectedLane && laneSelect.options.length > 0) {
+             // 直前にいれたレーンの次を探す（なければ最小の番号）
+        }
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const groupId = urlParams.get('id') || "未指定の団体";
+    document.getElementById('groupDisplay').innerText = "団体ID: " + groupId;
+
+    window.onload = () => updateLaneOptions();
+
+    function addToCart() {
+        const laneVal = document.getElementById('laneNumber').value;
+        if(!laneVal) return;
+        
+        const names = document.getElementsByClassName('m-name');
+        const sexes = document.getElementsByClassName('m-sex');
+        const grades = document.getElementsByClassName('m-grade');
+        const bumpers = document.getElementsByClassName('m-bumper');
+
+        let members = [];
+        for(let i=0; i<4; i++) {
+            if(names[i].value.trim() !== "") {
+                members.push({ name: names[i].value, sex: sexes[i].value, grade: grades[i].value, bumper: bumpers[i].value });
+            }
+        }
+
+        if(members.length === 0) { alert("ボウラ名を1名以上入力してください"); return; }
+
+        const laneText = laneVal + "番レーン";
+        const existingIdx = cart.findIndex(item => item.lane === laneText);
+        
+        if (existingIdx > -1) {
+            cart[existingIdx] = { lane: laneText, members: members };
+        } else {
+            cart.push({ lane: laneText, members: members });
+        }
+
+        renderCart();
+        clearInputs();
+        
+        // リストを更新し、次のレーンを自動セット
+        updateLaneOptions();
+        
+        document.getElementById('submitBtn').disabled = false;
+        document.getElementById('addBtn').innerText = "このレーンをリストに追加";
+        document.getElementById('laneNumber').disabled = false;
+    }
+
+    function renderCart() {
+        const list = document.getElementById('cartList');
+        // レーン番号順に並び替えて表示
+        cart.sort((a, b) => parseInt(a.lane) - parseInt(b.lane));
+        
+        list.innerHTML = cart.map((item, idx) => `
+            <div class="cart-item">
+                <button class="edit-btn" onclick="editItem('${item.lane}')">修正</button>
+                <strong>${item.lane}</strong><br>
+                ${item.members.map(m => m.name + "(" + m.sex + ")").join(', ')}
+            </div>
+        `).join('');
+    }
+
+    function editItem(laneText) {
+        const item = cart.find(c => c.lane === laneText);
+        
+        // 修正対象のレーンを選択肢に復活させてセット
+        updateLaneOptions(laneText);
+        document.getElementById('laneNumber').value = laneText.replace("番レーン", "");
+        document.getElementById('laneNumber').disabled = true; // 修正中はレーン変更不可に
+        
+        const names = document.getElementsByClassName('m-name');
+        const sexes = document.getElementsByClassName('m-sex');
+        const grades = document.getElementsByClassName('m-grade');
+        const bumpers = document.getElementsByClassName('m-bumper');
+
+        clearInputs();
+        item.members.forEach((m, i) => {
+            names[i].value = m.name;
+            sexes[i].value = m.sex;
+            grades[i].value = m.grade;
+            bumpers[i].value = m.bumper;
+        });
+
+        document.getElementById('addBtn').innerText = "修正を反映する";
+        window.scrollTo(0, 0);
+    }
+
+    function clearInputs() {
+        const names = document.getElementsByClassName('m-name');
+        for(let n of names) n.value = "";
+    }
+
+    async function submitAll() {
+        if(!confirm("リストの全レーン分を送信します。よろしいですか？")) return;
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerText = "送信中...";
+        try {
+            await fetch(url, { method: "POST", mode: "no-cors", body: JSON.stringify({ groupId: groupId, allData: cart }) });
+            alert("送信完了！");
+            cart = [];
+            renderCart();
+            updateLaneOptions();
+            document.getElementById('submitBtn').disabled = true;
+        } catch (e) {
+            alert("エラー発生");
+            btn.disabled = false;
+        }
+    }
+</script>
+</body>
+</html>
