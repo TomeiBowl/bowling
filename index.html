@@ -118,4 +118,103 @@
     }
 
     function loadData() {
-        const saved = localStorage.
+        const saved = localStorage.getItem('bowlingAppData');
+        if (!saved) return;
+        const data = JSON.parse(saved);
+        document.getElementById('groupName').value = data.groupName || "";
+        document.getElementById('reserveDate').value = data.reserveDate || "";
+        document.getElementById('kanjiName').value = data.kanjiName || "";
+        document.getElementById('tel').value = data.tel || "";
+        document.getElementById('notes').value = data.notes || "";
+        cart = data.cart || [];
+    }
+
+    function clearAllData() { if(confirm("リセットしますか？")) { localStorage.removeItem('bowlingAppData'); location.reload(); } }
+
+    function updateLaneOptions(selectedLaneText = null) {
+        const laneSelect = document.getElementById('laneNumber');
+        laneSelect.innerHTML = "";
+        for (let i = 1; i <= 48; i++) {
+            const laneText = i + "番レーン";
+            if (!cart.some(item => item.lane === laneText) || laneText === selectedLaneText) {
+                let opt = document.createElement('option'); opt.value = i; opt.innerText = laneText; laneSelect.appendChild(opt);
+            }
+        }
+    }
+
+    function addToCart() {
+        const laneVal = document.getElementById('laneNumber').value;
+        const laneText = laneVal + "番レーン";
+        const names = document.getElementsByClassName('m-name');
+        const sexes = document.getElementsByClassName('m-sex');
+        const grades = document.getElementsByClassName('m-grade');
+        const bumpers = document.getElementsByClassName('m-bumper');
+        let members = [];
+        for(let i=0; i<4; i++) {
+            if(names[i].value.trim() !== "") {
+                members.push({ name: names[i].value, sex: sexes[i].value, grade: grades[i].value, bumper: bumpers[i].value });
+            }
+        }
+        if(members.length === 0) { alert("氏名を入力してください"); return; }
+        const existingIdx = cart.findIndex(item => item.lane === laneText);
+        if (existingIdx > -1) { cart[existingIdx] = { lane: laneText, members: members }; }
+        else { cart.push({ lane: laneText, members: members }); }
+        renderCart(); for(let n of names) n.value = ""; updateLaneOptions(); saveAndReset();
+        document.getElementById('addBtn').innerText = "このレーンをリストに追加";
+        document.getElementById('laneNumber').disabled = false;
+    }
+
+    function renderCart() {
+        const list = document.getElementById('cartList');
+        if (cart.length === 0) { list.innerHTML = "まだ追加されていません"; return; }
+        cart.sort((a, b) => parseInt(a.lane) - parseInt(b.lane));
+        list.innerHTML = cart.map((item) => `
+            <div class="cart-item">
+                <button class="edit-btn" onclick="editItem('${item.lane}')">修正</button>
+                <strong>${item.lane}</strong><br>
+                ${item.members.map(m => m.name + "(" + (m.sex=="1"?"男":"女") + ")").join(', ')}
+            </div>
+        `).join('');
+    }
+
+    function editItem(laneText) {
+        const item = cart.find(c => c.lane === laneText);
+        updateLaneOptions(laneText);
+        document.getElementById('laneNumber').value = laneText.replace("番レーン", "");
+        document.getElementById('laneNumber').disabled = true;
+        const names = document.getElementsByClassName('m-name');
+        const sexes = document.getElementsByClassName('m-sex');
+        const grades = document.getElementsByClassName('m-grade');
+        const bumpers = document.getElementsByClassName('m-bumper');
+        item.members.forEach((m, i) => {
+            names[i].value = m.name; sexes[i].value = m.sex; grades[i].value = m.grade; bumpers[i].value = m.bumper;
+        });
+        document.getElementById('addBtn').innerText = "修正を反映する";
+        window.scrollTo(0, 0);
+    }
+
+    function checkButtonStatus() { if(cart.length > 0) document.getElementById('submitBtn').disabled = false; }
+
+    async function submitAll() {
+        const groupName = document.getElementById('groupName').value.trim();
+        if(!groupName) { alert("団体名を入力してください"); return; }
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true; btn.innerText = "送信中...";
+        const payload = {
+            groupName: groupName,
+            reserveDate: document.getElementById('reserveDate').value,
+            kanjiName: document.getElementById('kanjiName').value,
+            tel: document.getElementById('tel').value,
+            notes: document.getElementById('notes').value,
+            allData: cart
+        };
+        try {
+            await fetch(url, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
+            btn.innerText = "送信済み"; btn.disabled = true;
+            document.getElementById('successBanner').style.display = 'block';
+            alert("送信が完了しました！"); saveData();
+        } catch (e) { alert("エラーが発生しました。"); btn.disabled = false; btn.innerText = "全内容を送信する"; }
+    }
+</script>
+</body>
+</html>
