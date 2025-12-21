@@ -18,10 +18,9 @@
         .member-block { border-bottom: 1px dashed #eee; padding-bottom: 10px; margin-bottom: 15px; }
         .member-block:last-child { border-bottom: none; }
         .member-options { display: flex; gap: 5px; }
-        .member-options select { font-size: 14px; padding: 8px 4px; }
         .btn-add { background-color: #3498db; color: white; border: none; padding: 15px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 1.1em; font-weight: bold; margin-bottom: 10px; }
         .btn-submit { background-color: #27ae60; color: white; border: none; padding: 20px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 1.3em; font-weight: bold; margin-top: 10px; }
-        .btn-submit:disabled { background-color: #95a5a6 !important; cursor: not-allowed; opacity: 0.8; }
+        .btn-submit:disabled { background-color: #95a5a6 !important; cursor: not-allowed; }
         .cart-item { background: #f9f9f9; border-left: 5px solid #3498db; padding: 12px; margin-bottom: 10px; position: relative; font-size: 0.95em; }
         .edit-btn { position: absolute; right: 8px; top: 12px; background: #f39c12; color: white; border: none; border-radius: 3px; cursor: pointer; padding: 6px 12px; font-size: 0.85em; }
         .success-banner { display: none; background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; text-align: center; margin-top: 15px; font-weight: bold; border: 1px solid #c3e6cb; }
@@ -45,12 +44,12 @@
         <label>電話番号</label>
         <input type="tel" id="tel" placeholder="090-0000-0000" oninput="saveAndReset()">
         <label>要望欄（自由記述）</label>
-        <textarea id="notes" placeholder="靴のサイズや追加事項など" oninput="saveAndReset()"></textarea>
+        <textarea id="notes" placeholder="何かご要望等あればご記入ください" oninput="saveAndReset()"></textarea>
     </div>
     
     <div class="section">
         <h3>2. メンバー入力</h3>
-        <label>レーン番号</label>
+        <label>リスト（番号を選択）</label>
         <select id="laneNumber" onchange="saveAndReset()"></select>
         <div id="memberContainer"></div>
         <button id="addBtn" class="btn-add" onclick="addToCart()">このレーンをリストに追加</button>
@@ -64,25 +63,23 @@
     </div>
 
     <div class="clear-storage">
-        <button onclick="clearAllData()">入力をすべてリセットする</button>
+        <button onclick="clearAllData()">すべての入力をリセットする</button>
     </div>
 </div>
 
 <script>
-    // ★重要：URLを貼り替えるときは前後の " " を消さないように注意してください
     const url = "https://script.google.com/macros/s/AKfycby56vcOYxSqdRfs8UgFXahRmDrEPo_cjtC8OWtTsfnlX6uLaU6EYgt7PJylZGosFQ_Y/exec"; 
-    
     let cart = [];
 
-    // ボウラ名入力欄を生成する関数
+    // ボウラ名入力欄を生成
     function generateMemberInputs() {
         const memberContainer = document.getElementById('memberContainer');
-        memberContainer.innerHTML = ""; // 一度空にする
+        memberContainer.innerHTML = "";
         for (let i = 1; i <= 4; i++) {
             memberContainer.innerHTML += `
                 <div class="member-block">
                     <label>ボウラ名 ${i}</label>
-                    <input type="text" class="m-name" placeholder="氏名を入力" oninput="saveAndReset()">
+                    <input type="text" class="m-name" placeholder="氏名" oninput="saveAndReset()">
                     <div class="member-options">
                         <select class="m-sex" onchange="saveAndReset()"><option value="1">男</option><option value="2">女</option></select>
                         <select class="m-grade" onchange="saveAndReset()">
@@ -101,7 +98,7 @@
     }
 
     window.onload = () => { 
-        generateMemberInputs(); // 入力欄を作る
+        generateMemberInputs();
         loadData(); 
         updateLaneOptions(); 
         renderCart(); 
@@ -142,22 +139,28 @@
         cart = data.cart || [];
     }
 
-    function clearAllData() { if(confirm("入力をリセットしますか？")) { localStorage.removeItem('bowlingAppData'); location.reload(); } }
+    function clearAllData() { if(confirm("リセットしますか？")) { localStorage.removeItem('bowlingAppData'); location.reload(); } }
 
-    function updateLaneOptions(selectedLaneText = null) {
+    // レーン（リスト）選択肢を更新（数字のみ）
+    function updateLaneOptions(selectedLaneNum = null) {
         const laneSelect = document.getElementById('laneNumber');
         laneSelect.innerHTML = "";
         for (let i = 1; i <= 48; i++) {
-            const laneText = i + "番レーン";
-            if (!cart.some(item => item.lane === laneText) || laneText === selectedLaneText) {
-                let opt = document.createElement('option'); opt.value = i; opt.innerText = laneText; laneSelect.appendChild(opt);
+            const laneNumStr = i.toString();
+            // カート内にすでにその番号があるかチェック（修正中の番号は除外）
+            const alreadyInCart = cart.some(item => item.lane === laneNumStr);
+            
+            if (!alreadyInCart || laneNumStr === selectedLaneNum) {
+                let opt = document.createElement('option');
+                opt.value = laneNumStr;
+                opt.innerText = laneNumStr; // 数字のみ表示
+                laneSelect.appendChild(opt);
             }
         }
     }
 
     function addToCart() {
-        const laneVal = document.getElementById('laneNumber').value;
-        const laneText = laneVal + "番レーン";
+        const laneVal = document.getElementById('laneNumber').value; // 数字が入る
         const names = document.getElementsByClassName('m-name');
         const sexes = document.getElementsByClassName('m-sex');
         const grades = document.getElementsByClassName('m-grade');
@@ -169,10 +172,13 @@
             }
         }
         if(members.length === 0) { alert("氏名を入力してください"); return; }
-        const existingIdx = cart.findIndex(item => item.lane === laneText);
-        if (existingIdx > -1) { cart[existingIdx] = { lane: laneText, members: members }; }
-        else { cart.push({ lane: laneText, members: members }); }
-        renderCart(); for(let n of names) n.value = ""; updateLaneOptions(); saveAndReset();
+        
+        const existingIdx = cart.findIndex(item => item.lane === laneVal);
+        if (existingIdx > -1) { cart[existingIdx] = { lane: laneVal, members: members }; }
+        else { cart.push({ lane: laneVal, members: members }); }
+        
+        renderCart(); for(let n of names) n.value = ""; 
+        updateLaneOptions(); saveAndReset();
         document.getElementById('addBtn').innerText = "このレーンをリストに追加";
         document.getElementById('laneNumber').disabled = false;
     }
@@ -180,20 +186,21 @@
     function renderCart() {
         const list = document.getElementById('cartList');
         if (cart.length === 0) { list.innerHTML = "まだ追加されていません"; return; }
+        // 数値としてソート
         cart.sort((a, b) => parseInt(a.lane) - parseInt(b.lane));
         list.innerHTML = cart.map((item) => `
             <div class="cart-item">
                 <button class="edit-btn" onclick="editItem('${item.lane}')">修正</button>
-                <strong>${item.lane}</strong><br>
+                <strong>番号: ${item.lane}</strong><br>
                 ${item.members.map(m => m.name + "(" + (m.sex=="1"?"男":"女") + ")").join(', ')}
             </div>
         `).join('');
     }
 
-    function editItem(laneText) {
-        const item = cart.find(c => c.lane === laneText);
-        updateLaneOptions(laneText);
-        document.getElementById('laneNumber').value = laneText.replace("番レーン", "");
+    function editItem(laneNum) {
+        const item = cart.find(c => c.lane === laneNum);
+        updateLaneOptions(laneNum);
+        document.getElementById('laneNumber').value = laneNum;
         document.getElementById('laneNumber').disabled = true;
         const names = document.getElementsByClassName('m-name');
         const sexes = document.getElementsByClassName('m-sex');
