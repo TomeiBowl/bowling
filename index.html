@@ -16,11 +16,16 @@
         .member-block { border-bottom: 1px dashed #eee; padding-bottom: 10px; margin-bottom: 10px; }
         .member-options { display: flex; gap: 5px; }
         .btn-add { background-color: #3498db; color: white; border: none; padding: 15px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 1.1em; font-weight: bold; margin-bottom: 10px; }
+        
+        /* 送信ボタンのスタイル */
         .btn-submit { background-color: #27ae60; color: white; border: none; padding: 20px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 1.3em; font-weight: bold; width: 100%; margin-top: 10px; }
-        .btn-submit:disabled { background-color: #ccc; }
+        
+        /* 送信済み（グレー）の状態 */
+        .btn-submit:disabled { background-color: #95a5a6 !important; cursor: not-allowed; }
+        
         .cart-item { background: #f9f9f9; border-left: 5px solid #3498db; padding: 10px; margin-bottom: 10px; position: relative; font-size: 0.9em; }
         .edit-btn { position: absolute; right: 5px; top: 10px; background: #f39c12; color: white; border: none; border-radius: 3px; cursor: pointer; padding: 5px 10px; }
-        .status-msg { color: #e67e22; font-weight: bold; text-align: center; margin-top: 5px; display: none; }
+        .status-msg { color: #27ae60; font-weight: bold; text-align: center; margin-top: 10px; font-size: 1.1em; display: none; }
     </style>
 </head>
 <body>
@@ -44,7 +49,6 @@
         <h3>メンバー入力</h3>
         <label>レーン選択</label>
         <select id="laneNumber"></select>
-
         <div id="memberContainer"></div>
         <button id="addBtn" class="btn-add" onclick="addToCart()">このレーンをリストに追加</button>
     </div>
@@ -53,12 +57,11 @@
         <h3>提出リスト (確認用)</h3>
         <div id="cartList">まだ追加されていません</div>
         <button id="submitBtn" class="btn-submit" onclick="submitAll()" disabled>全内容を送信する</button>
-        <div id="statusMsg" class="status-msg">【送信完了しました】</div>
+        <div id="statusMsg" class="status-msg">✅ 送信が完了しました</div>
     </div>
 </div>
 
 <script>
-    // ★ここにご自身のGASのURLを貼り付けてください
     const url = "https://script.google.com/macros/s/AKfycbxnbr_kqZgYYrXmM3_HAgRS7s0EDpUt8h2CUE0eKuY-ucBkR_fGuh87jkiElbN-Mj88/exec"; 
     let cart = [];
     const MAX_LANES = 48;
@@ -120,10 +123,14 @@
         renderCart();
         for(let n of names) n.value = "";
         updateLaneOptions();
-        document.getElementById('submitBtn').disabled = false;
+        
+        // リストに追加・修正した場合は送信ボタンを復活させる
+        const sBtn = document.getElementById('submitBtn');
+        sBtn.disabled = false;
+        sBtn.innerText = "全内容を送信する";
         document.getElementById('addBtn').innerText = "このレーンをリストに追加";
         document.getElementById('laneNumber').disabled = false;
-        document.getElementById('statusMsg').style.display = 'none'; // 編集したら送信済表示を消す
+        document.getElementById('statusMsg').style.display = 'none';
     }
 
     function renderCart() {
@@ -171,11 +178,14 @@
 
         try {
             await fetch(url, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
-            alert("送信が完了しました！この画面のままスタッフへお見せください。");
+            alert("送信が完了しました！");
+            
+            // 【重要】ボタンの表記を変えてグレーにする
+            btn.innerText = "送信済み (スタッフへお見せください)";
+            btn.disabled = true;
             document.getElementById('statusMsg').style.display = 'block';
         } catch (e) {
             alert("送信エラーが発生しました。");
-        } finally {
             btn.disabled = false;
             btn.innerText = "全内容を送信する";
         }
@@ -183,4 +193,3 @@
 </script>
 </body>
 </html>
-
