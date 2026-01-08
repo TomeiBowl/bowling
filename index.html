@@ -29,6 +29,8 @@
         .clear-storage { text-align: right; margin-top: 20px; }
         .clear-storage button { background: none; border: none; color: #999; text-decoration: underline; font-size: 0.8em; cursor: pointer; }
         .next-lane-badge { background: #e74c3c; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; margin-left: 5px; }
+        .pickup-box { background: #fff9f0; border: 1px solid #f39c12; padding: 10px; border-radius: 5px; margin-bottom: 12px; }
+        #imgPreview { max-width: 100%; border-radius: 4px; margin-top: 10px; display: none; border: 1px solid #ddd; }
     </style>
 </head>
 <body>
@@ -48,6 +50,21 @@
         <div class="time-flex">
             <select id="resHour" onchange="saveAndReset()"></select>
             <select id="resMin" onchange="saveAndReset()"></select>
+        </div>
+
+        <div class="pickup-box">
+            <label>🚌 送迎バスの希望</label>
+            <select id="pickupRequest" onchange="togglePickupInput(); saveAndReset();">
+                <option value="無し">無し</option>
+                <option value="希望する">希望する</option>
+            </select>
+            <div id="pickupDetailArea" style="display:none; margin-top:10px;">
+                <label>送迎場所・時間など</label>
+                <input type="text" id="pickupLocation" placeholder="例：瀬戸駅前 13:00" oninput="saveAndReset()">
+                <label>場所のスクショ等（任意）</label>
+                <input type="file" id="pickupImage" accept="image/*" onchange="previewImage(this)">
+                <img id="imgPreview">
+            </div>
         </div>
 
         <label>幹事名</label>
@@ -78,23 +95,40 @@
 </div>
 
 <script>
-    // 提供いただいたGASのURLを設定済みです
-    const url = "https://script.google.com/macros/s/AKfycbz6K-nbTPSoeDiwjhbyCsuK7BjDP3R4k7xQvFj6-VEY2pugNSdW-fkn6BFbZfQJyhvK/exec"; 
+    // ★新しく発行したGASのデプロイURLをここに貼り付けてください
+    const url = "https://script.google.com/macros/s/AKfycbx0HNgU-cZ0xc_F0P-EHWYrcvjGgSoEL7C-VM9ekCqsfAJyuJXcx5gtUZfVfdf8ljJH/exec"; 
     
     let cart = [];
+    let base64Image = null;
 
-    // 予約時間のプルダウン生成
     function setupTimeSelect() {
         const hSelect = document.getElementById('resHour');
         const mSelect = document.getElementById('resMin');
         hSelect.innerHTML = '<option value="">時</option>';
-        for (let i = 8; i <= 22; i++) {
-            hSelect.innerHTML += `<option value="${i}">${i}時</option>`;
-        }
+        for (let i = 8; i <= 22; i++) { hSelect.innerHTML += `<option value="${i}">${i}時</option>`; }
         mSelect.innerHTML = '<option value="">分</option>';
         for (let i = 0; i < 60; i += 5) {
             let m = i < 10 ? '0' + i : i;
             mSelect.innerHTML += `<option value="${m}">${m}分</option>`;
+        }
+    }
+
+    function togglePickupInput() {
+        const val = document.getElementById('pickupRequest').value;
+        document.getElementById('pickupDetailArea').style.display = (val === "希望する") ? "block" : "none";
+    }
+
+    function previewImage(input) {
+        const file = input.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                base64Image = e.target.result;
+                const preview = document.getElementById('imgPreview');
+                preview.src = base64Image;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
         }
     }
 
@@ -110,8 +144,6 @@
                         <select class="m-sex" onchange="saveAndReset()"><option value="1">男</option><option value="2">女</option></select>
                         <select class="m-grade" onchange="saveAndReset()">
                             <option value="一般">一般</option><option value="幼児">幼児</option><option value="小学生">小学生</option>
-                            <option value="小1">小1</option><option value="小2">小2</option><option value="小3">小3</option>
-                            <option value="小4">小4</option><option value="小5">小5</option><option value="小6">小6</option>
                             <option value="中学生">中学生</option><option value="高校生・大学生">高校生・大学生</option>
                         </select>
                         <select class="m-bumper" onchange="saveAndReset()"><option value="バンパー無し">バンパー無し</option><option value="バンパー有り">バンパー有り</option></select>
@@ -120,7 +152,7 @@
         }
     }
 
-    window.onload = () => { setupTimeSelect(); generateMemberInputs(); loadData(); renderCart(); updateLaneDisplay(); checkButtonStatus(); };
+    window.onload = () => { setupTimeSelect(); generateMemberInputs(); loadData(); togglePickupInput(); renderCart(); updateLaneDisplay(); checkButtonStatus(); };
 
     function updateLaneDisplay() {
         const nextNum = cart.length + 1;
@@ -144,6 +176,8 @@
             resDateOnly: document.getElementById('resDateOnly').value,
             resHour: document.getElementById('resHour').value,
             resMin: document.getElementById('resMin').value,
+            pickupRequest: document.getElementById('pickupRequest').value,
+            pickupLocation: document.getElementById('pickupLocation').value,
             kanjiName: document.getElementById('kanjiName').value,
             tel: document.getElementById('tel').value,
             notes: document.getElementById('notes').value,
@@ -160,6 +194,8 @@
         document.getElementById('resDateOnly').value = data.resDateOnly || "";
         document.getElementById('resHour').value = data.resHour || "";
         document.getElementById('resMin').value = data.resMin || "";
+        document.getElementById('pickupRequest').value = data.pickupRequest || "無し";
+        document.getElementById('pickupLocation').value = data.pickupLocation || "";
         document.getElementById('kanjiName').value = data.kanjiName || "";
         document.getElementById('tel').value = data.tel || "";
         document.getElementById('notes').value = data.notes || "";
@@ -170,56 +206,52 @@
 
     function addToCart() {
         const names = document.getElementsByClassName('m-name');
-        const sexes = document.getElementsByClassName('m-sex');
-        const grades = document.getElementsByClassName('m-grade');
-        const bumpers = document.getElementsByClassName('m-bumper');
         let members = [];
         for(let i=0; i<4; i++) {
             if(names[i].value.trim() !== "") {
-                members.push({ name: names[i].value, sex: sexes[i].value, grade: grades[i].value, bumper: bumpers[i].value });
+                members.push({
+                    name: names[i].value,
+                    sex: document.getElementsByClassName('m-sex')[i].value,
+                    grade: document.getElementsByClassName('m-grade')[i].value,
+                    bumper: document.getElementsByClassName('m-bumper')[i].value
+                });
             }
         }
-        if(members.length === 0) { alert("氏名を1名以上入力してください"); return; }
-        const laneVal = (cart.length + 1).toString();
-        cart.push({ lane: laneVal, members: members });
+        if(members.length === 0) { alert("氏名を入力してください"); return; }
+        cart.push({ lane: (cart.length + 1).toString(), members: members });
         renderCart(); for(let n of names) n.value = ""; updateLaneDisplay(); saveAndReset();
         window.scrollTo(0, document.getElementById('memberContainer').offsetTop);
     }
 
-    function removeLast() {
-        if(confirm("最後に追加したリスト内容を削除しますか？")) { cart.pop(); renderCart(); updateLaneDisplay(); saveAndReset(); }
-    }
+    function removeLast() { if(confirm("最後を削除しますか？")) { cart.pop(); renderCart(); updateLaneDisplay(); saveAndReset(); } }
 
     function renderCart() {
         const list = document.getElementById('cartList');
         if (cart.length === 0) { list.innerHTML = "まだ追加されていません"; return; }
-        list.innerHTML = cart.map((item) => `
-            <div class="cart-item">
-                <strong>番号: ${item.lane}</strong><br>
-                ${item.members.map(m => m.name + "(" + (m.sex=="1"?"男":"女") + ")").join(', ')}
-            </div>
-        `).join('');
+        list.innerHTML = cart.map((item) => `<div class="cart-item"><strong>番号: ${item.lane}</strong><br>${item.members.map(m => m.name).join(', ')}</div>`).join('');
     }
 
     function checkButtonStatus() { if(cart.length > 0) document.getElementById('submitBtn').disabled = false; }
 
     async function submitAll() {
-        const groupName = document.getElementById('groupName').value.trim();
-        if(!groupName) { alert("団体名を入力してください"); return; }
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true; btn.innerText = "送信中...（画像がある場合は時間がかかります）";
         const h = document.getElementById('resHour').value;
         const m = document.getElementById('resMin').value;
-        const btn = document.getElementById('submitBtn');
-        btn.disabled = true; btn.innerText = "送信中...";
         const payload = {
-            groupName: groupName,
+            groupName: document.getElementById('groupName').value,
             reserveDate: document.getElementById('resDateOnly').value + " " + (h && m ? h + ":" + m : ""),
-            kanjiName: document.getElementById('kanjiName').value, tel: document.getElementById('tel').value,
-            notes: document.getElementById('notes').value, allData: cart
+            pickupRequest: document.getElementById('pickupRequest').value,
+            pickupLocation: document.getElementById('pickupLocation').value,
+            imageData: base64Image,
+            kanjiName: document.getElementById('kanjiName').value,
+            tel: document.getElementById('tel').value,
+            notes: document.getElementById('notes').value,
+            allData: cart
         };
         try {
-            await fetch(url, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
-            btn.innerText = "送信済み"; btn.disabled = true;
-            document.getElementById('successBanner').style.display = 'block';
+            const response = await fetch(url, { method: "POST", body: JSON.stringify(payload) });
+            btn.innerText = "送信済み"; document.getElementById('successBanner').style.display = 'block';
             alert("送信が完了しました！"); saveData();
         } catch (e) { alert("送信エラー"); btn.disabled = false; btn.innerText = "全内容を送信する"; }
     }
