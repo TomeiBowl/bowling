@@ -20,6 +20,7 @@
         .btn-add { background-color: #3498db; color: white; border: none; padding: 15px; border-radius: 4px; width: 100%; font-size: 1.1em; font-weight: bold; margin-bottom: 10px; cursor: pointer; }
         .btn-submit { background-color: #27ae60; color: white; border: none; padding: 20px; border-radius: 4px; width: 100%; font-size: 1.3em; font-weight: bold; margin-top: 10px; cursor: pointer; }
         .btn-submit:disabled { background-color: #95a5a6 !important; }
+        #imgPreview { max-width: 100%; border-radius: 4px; margin-top: 10px; display: none; border: 1px solid #ddd; }
         .cart-item { background: #f9f9f9; border-left: 5px solid #3498db; padding: 10px; margin-bottom: 8px; font-size: 0.9em; }
         .btn-edit-small { background: #f39c12; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; }
         .btn-del-small { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; }
@@ -51,6 +52,9 @@
                 <label>迎え時間</label>
                 <div class="time-flex"><select id="pukHour" onchange="saveData()"></select><select id="pukMin" onchange="saveData()"></select></div>
                 <label>乗車人数</label><input type="number" id="pickupCount" placeholder="名" oninput="saveData()">
+                <label>場所のスクショ（任意）</label>
+                <input type="file" id="pickupImage" accept="image/*" onchange="previewImage(this)">
+                <img id="imgPreview">
             </div>
         </div>
 
@@ -77,8 +81,9 @@
 <script>
     const url = "https://script.google.com/macros/s/AKfycbxYqakCGF27HNE88dfaEkzhoApuWg_QkQurpqfyyAMhEF-TqSKjzQRixH-WTlyB0z_8/exec";
     let cart = [];
+    let base64Image = null; // 画像データ用
     let editingIndex = -1;
-    let isAlreadySubmitted = false; // 送信済みフラグ
+    let isAlreadySubmitted = false;
 
     function setupTimeSelects() {
         const ids = [['resHour', 'resMin'], ['pukHour', 'pukMin']];
@@ -91,6 +96,21 @@
     }
 
     function togglePickupInput() { document.getElementById('pickupDetailArea').style.display = (document.getElementById('pickupRequest').value === "あり") ? "block" : "none"; }
+
+    // 画像プレビューとデータ保持の復活
+    function previewImage(input) {
+        const file = input.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                base64Image = e.target.result;
+                document.getElementById('imgPreview').src = base64Image;
+                document.getElementById('imgPreview').style.display = 'block';
+                saveData();
+            };
+            reader.readAsDataURL(file);
+        }
+    }
 
     function generateMemberInputs() {
         const container = document.getElementById('memberContainer');
@@ -139,7 +159,7 @@
         }
         document.getElementById('mainAddBtn').innerText = "リスト " + (index+1) + " を修正して保存";
         document.getElementById('mainAddBtn').style.backgroundColor = "#f39c12";
-        if(isAlreadySubmitted) document.getElementById('submitBtn').innerText = "再送信"; // 編集時は再送信ボタンに
+        if(isAlreadySubmitted) document.getElementById('submitBtn').innerText = "再送信";
         window.scrollTo(0, document.getElementById('memberContainer').offsetTop);
     }
 
@@ -153,26 +173,70 @@
     }
 
     function saveData() {
-        const d = { groupName: document.getElementById('groupName').value, resDateOnly: document.getElementById('resDateOnly').value, resHour: document.getElementById('resHour').value, resMin: document.getElementById('resMin').value, pickupRequest: document.getElementById('pickupRequest').value, pickupType: document.getElementById('pickupType').value, pickupLocation: document.getElementById('pickupLocation').value, pukHour: document.getElementById('pukHour').value, pukMin: document.getElementById('pukMin').value, pickupCount: document.getElementById('pickupCount').value, kanjiName: document.getElementById('kanjiName').value, tel: document.getElementById('tel').value, notes: document.getElementById('notes').value, cart: cart, submitted: isAlreadySubmitted };
-        localStorage.setItem('tomei_v5', JSON.stringify(d));
+        const d = { 
+            groupName: document.getElementById('groupName').value, 
+            resDateOnly: document.getElementById('resDateOnly').value, 
+            resHour: document.getElementById('resHour').value, 
+            resMin: document.getElementById('resMin').value, 
+            pickupRequest: document.getElementById('pickupRequest').value, 
+            pickupType: document.getElementById('pickupType').value, 
+            pickupLocation: document.getElementById('pickupLocation').value, 
+            pukHour: document.getElementById('pukHour').value, 
+            pukMin: document.getElementById('pukMin').value, 
+            pickupCount: document.getElementById('pickupCount').value, 
+            kanjiName: document.getElementById('kanjiName').value, 
+            tel: document.getElementById('tel').value, 
+            notes: document.getElementById('notes').value, 
+            cart: cart, 
+            img: base64Image, // 画像も保存
+            submitted: isAlreadySubmitted 
+        };
+        localStorage.setItem('tomei_v6', JSON.stringify(d));
     }
 
     function loadData() {
-        const saved = localStorage.getItem('tomei_v5'); if (!saved) return;
+        const saved = localStorage.getItem('tomei_v6'); if (!saved) return;
         const d = JSON.parse(saved);
-        document.getElementById('groupName').value = d.groupName || ""; document.getElementById('resDateOnly').value = d.resDateOnly || ""; document.getElementById('resHour').value = d.resHour || ""; document.getElementById('resMin').value = d.resMin || ""; document.getElementById('pickupRequest').value = d.pickupRequest || "なし"; document.getElementById('pickupType').value = d.pickupType || "行きのみ"; document.getElementById('pickupLocation').value = d.pickupLocation || ""; document.getElementById('pukHour').value = d.pukHour || ""; document.getElementById('pukMin').value = d.pukMin || ""; document.getElementById('pickupCount').value = d.pickupCount || ""; document.getElementById('kanjiName').value = d.kanjiName || ""; document.getElementById('tel').value = d.tel || ""; document.getElementById('notes').value = d.notes || ""; cart = d.cart || []; isAlreadySubmitted = d.submitted || false;
+        document.getElementById('groupName').value = d.groupName || ""; 
+        document.getElementById('resDateOnly').value = d.resDateOnly || ""; 
+        document.getElementById('resHour').value = d.resHour || ""; 
+        document.getElementById('resMin').value = d.resMin || ""; 
+        document.getElementById('pickupRequest').value = d.pickupRequest || "なし"; 
+        document.getElementById('pickupType').value = d.pickupType || "行きのみ"; 
+        document.getElementById('pickupLocation').value = d.pickupLocation || ""; 
+        document.getElementById('pukHour').value = d.pukHour || ""; 
+        document.getElementById('pukMin').value = d.pukMin || ""; 
+        document.getElementById('pickupCount').value = d.pickupCount || ""; 
+        document.getElementById('kanjiName').value = d.kanjiName || ""; 
+        document.getElementById('tel').value = d.tel || ""; 
+        document.getElementById('notes').value = d.notes || ""; 
+        cart = d.cart || []; 
+        isAlreadySubmitted = d.submitted || false;
+        base64Image = d.img || null; // 画像を復元
+        if(base64Image) {
+            document.getElementById('imgPreview').src = base64Image;
+            document.getElementById('imgPreview').style.display = 'block';
+        }
         if(isAlreadySubmitted) document.getElementById('submitBtn').innerText = "送信済み（修正可能）";
     }
 
-    function clearAllData() { if(confirm("リセットしますか？")){ localStorage.removeItem('tomei_v5'); location.reload(); } }
+    function clearAllData() { if(confirm("リセットしますか？")){ localStorage.removeItem('tomei_v6'); location.reload(); } }
 
     async function submitAll() {
         const btn = document.getElementById('submitBtn'); btn.disabled = true; btn.innerText = "送信中...";
         const payload = { 
             groupName: document.getElementById('groupName').value, 
             reserveDate: document.getElementById('resDateOnly').value + " " + document.getElementById('resHour').value + ":" + document.getElementById('resMin').value, 
-            pickupRequest: document.getElementById('pickupRequest').value, pickupType: document.getElementById('pickupType').value, pickupLocation: document.getElementById('pickupLocation').value, pickupTime: document.getElementById('pukHour').value + ":" + document.getElementById('pukMin').value, pickupCount: document.getElementById('pickupCount').value, 
-            kanjiName: document.getElementById('kanjiName').value, tel: document.getElementById('tel').value, notes: document.getElementById('notes').value, allData: cart 
+            pickupRequest: document.getElementById('pickupRequest').value, 
+            pickupType: document.getElementById('pickupType').value, 
+            pickupLocation: document.getElementById('pickupLocation').value, 
+            pickupTime: document.getElementById('pukHour').value + ":" + document.getElementById('pukMin').value, 
+            pickupCount: document.getElementById('pickupCount').value, 
+            imageData: base64Image, // サーバーへ送信
+            kanjiName: document.getElementById('kanjiName').value, 
+            tel: document.getElementById('tel').value, 
+            notes: document.getElementById('notes').value, 
+            allData: cart 
         };
         try { 
             await fetch(url, { method: "POST", body: JSON.stringify(payload) }); 
