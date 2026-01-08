@@ -11,9 +11,11 @@
         h2 { text-align: center; color: #e74c3c; margin-top: 0; }
         h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5px; margin-bottom: 15px; font-size: 1.1em; }
         label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
-        input[type="text"], input[type="datetime-local"], input[type="tel"], select, textarea { 
+        input[type="text"], input[type="date"], input[type="tel"], select, textarea { 
             width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; margin-bottom: 12px; 
         }
+        .time-flex { display: flex; gap: 10px; margin-bottom: 12px; }
+        .time-flex select { margin-bottom: 0; }
         textarea { height: 80px; resize: vertical; }
         .member-block { border-bottom: 1px dashed #eee; padding-bottom: 10px; margin-bottom: 15px; }
         .member-block:last-child { border-bottom: none; }
@@ -38,168 +40,12 @@
         <h3>1. 基本情報</h3>
         <label>団体名</label>
         <input type="text" id="groupName" placeholder="例：株式会社サンプル" oninput="saveAndReset()">
-        <label>予約日時 (5分刻み)</label>
-        <input type="datetime-local" id="reserveDate" step="300" oninput="saveAndReset()">
-        <label>幹事名</label>
-        <input type="text" id="kanjiName" placeholder="お名前" oninput="saveAndReset()">
-        <label>電話番号</label>
-        <input type="tel" id="tel" placeholder="090-0000-0000" oninput="saveAndReset()">
-        <label>要望欄（自由記述）</label>
-        <textarea id="notes" placeholder="何かご要望等あればご記入ください" oninput="saveAndReset()"></textarea>
-    </div>
-    
-    <div class="section">
-        <h3>2. メンバー入力 <span id="laneDisplay" class="next-lane-badge">リスト 1</span></h3>
-        <div id="memberContainer"></div>
-        <button id="addBtn" class="btn-add" onclick="addToCart()">このメンバーをリストに追加</button>
-        <button id="removeBtn" class="btn-remove" onclick="removeLast()" style="display:none;">直前のリストを削除してやり直す</button>
-    </div>
-
-    <div class="section">
-        <h3>3. 提出リスト (確認用)</h3>
-        <div id="cartList" style="color: #7f8c8d; font-size: 0.9em; margin-bottom: 10px;">まだ追加されていません</div>
-        <button id="submitBtn" class="btn-submit" onclick="submitAll()" disabled>全内容を送信する</button>
-        <div id="successBanner" class="success-banner">✅ 送信が完了しました</div>
-    </div>
-
-    <div class="clear-storage">
-        <button onclick="clearAllData()">すべての入力をリセットする</button>
-    </div>
-</div>
-
-<script>
-    const url = "https://script.google.com/macros/s/AKfycbz6K-nbTPSoeDiwjhbyCsuK7BjDP3R4k7xQvFj6-VEY2pugNSdW-fkn6BFbZfQJyhvK/exec"; 
-    let cart = [];
-
-    function generateMemberInputs() {
-        const memberContainer = document.getElementById('memberContainer');
-        memberContainer.innerHTML = "";
-        for (let i = 1; i <= 4; i++) {
-            memberContainer.innerHTML += `
-                <div class="member-block">
-                    <label>ボウラ名 ${i}</label>
-                    <input type="text" class="m-name" placeholder="氏名" oninput="saveAndReset()">
-                    <div class="member-options">
-                        <select class="m-sex" onchange="saveAndReset()"><option value="1">男</option><option value="2">女</option></select>
-                        <select class="m-grade" onchange="saveAndReset()">
-                            <option value="一般">一般</option><option value="幼児">幼児</option><option value="小学生">小学生</option>
-                            <option value="小1">小1</option><option value="小2">小2</option><option value="小3">小3</option>
-                            <option value="小4">小4</option><option value="小5">小5</option><option value="小6">小6</option>
-                            <option value="中学生">中学生</option><option value="高校生・大学生">高校生・大学生</option>
-                        </select>
-                        <select class="m-bumper" onchange="saveAndReset()"><option value="バンパー無し">バンパー無し</option><option value="バンパー有り">バンパー有り</option></select>
-                    </div>
-                </div>`;
-        }
-    }
-
-    window.onload = () => { generateMemberInputs(); loadData(); renderCart(); updateLaneDisplay(); checkButtonStatus(); };
-
-    function updateLaneDisplay() {
-        const nextNum = cart.length + 1;
-        document.getElementById('laneDisplay').innerText = "リスト " + nextNum;
-        document.getElementById('removeBtn').style.display = cart.length > 0 ? "block" : "none";
-    }
-
-    function saveAndReset() {
-        saveData();
-        if (cart.length > 0) {
-            const sBtn = document.getElementById('submitBtn');
-            sBtn.disabled = false;
-            sBtn.innerText = "全内容を送信する";
-            document.getElementById('successBanner').style.display = 'none';
-        }
-    }
-
-    function saveData() {
-        const data = {
-            groupName: document.getElementById('groupName').value,
-            reserveDate: document.getElementById('reserveDate').value,
-            kanjiName: document.getElementById('kanjiName').value,
-            tel: document.getElementById('tel').value,
-            notes: document.getElementById('notes').value,
-            cart: cart
-        };
-        localStorage.setItem('bowlingAppData', JSON.stringify(data));
-    }
-
-    function loadData() {
-        const saved = localStorage.getItem('bowlingAppData');
-        if (!saved) return;
-        const data = JSON.parse(saved);
-        document.getElementById('groupName').value = data.groupName || "";
-        document.getElementById('reserveDate').value = data.reserveDate || "";
-        document.getElementById('kanjiName').value = data.kanjiName || "";
-        document.getElementById('tel').value = data.tel || "";
-        document.getElementById('notes').value = data.notes || "";
-        cart = data.cart || [];
-    }
-
-    function clearAllData() { if(confirm("リセットしますか？")) { localStorage.removeItem('bowlingAppData'); location.reload(); } }
-
-    function addToCart() {
-        const names = document.getElementsByClassName('m-name');
-        const sexes = document.getElementsByClassName('m-sex');
-        const grades = document.getElementsByClassName('m-grade');
-        const bumpers = document.getElementsByClassName('m-bumper');
-        let members = [];
-        for(let i=0; i<4; i++) {
-            if(names[i].value.trim() !== "") {
-                members.push({ name: names[i].value, sex: sexes[i].value, grade: grades[i].value, bumper: bumpers[i].value });
-            }
-        }
-        if(members.length === 0) { alert("氏名を1名以上入力してください"); return; }
         
-        // 自動採番 (現在のカート数 + 1)
-        const laneVal = (cart.length + 1).toString();
-        cart.push({ lane: laneVal, members: members });
-        
-        renderCart(); 
-        for(let n of names) n.value = ""; 
-        updateLaneDisplay();
-        saveAndReset();
-        window.scrollTo(0, document.getElementById('memberContainer').offsetTop);
-    }
+        <label>予約日</label>
+        <input type="date" id="resDateOnly" oninput="saveAndReset()">
 
-    function removeLast() {
-        if(confirm("最後に追加したリスト内容を削除しますか？")) {
-            cart.pop();
-            renderCart();
-            updateLaneDisplay();
-            saveAndReset();
-        }
-    }
-
-    function renderCart() {
-        const list = document.getElementById('cartList');
-        if (cart.length === 0) { list.innerHTML = "まだ追加されていません"; return; }
-        list.innerHTML = cart.map((item) => `
-            <div class="cart-item">
-                <strong>番号: ${item.lane}</strong><br>
-                ${item.members.map(m => m.name + "(" + (m.sex=="1"?"男":"女") + ")").join(', ')}
-            </div>
-        `).join('');
-    }
-
-    function checkButtonStatus() { if(cart.length > 0) document.getElementById('submitBtn').disabled = false; }
-
-    async function submitAll() {
-        const groupName = document.getElementById('groupName').value.trim();
-        if(!groupName) { alert("団体名を入力してください"); return; }
-        const btn = document.getElementById('submitBtn');
-        btn.disabled = true; btn.innerText = "送信中...";
-        const payload = {
-            groupName: groupName, reserveDate: document.getElementById('reserveDate').value,
-            kanjiName: document.getElementById('kanjiName').value, tel: document.getElementById('tel').value,
-            notes: document.getElementById('notes').value, allData: cart
-        };
-        try {
-            await fetch(url, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
-            btn.innerText = "送信済み"; btn.disabled = true;
-            document.getElementById('successBanner').style.display = 'block';
-            alert("送信が完了しました！"); saveData();
-        } catch (e) { alert("送信エラー"); btn.disabled = false; btn.innerText = "全内容を送信する"; }
-    }
-</script>
-</body>
-</html>
+        <label>予約時間 (5分刻み)</label>
+        <div class="time-flex">
+            <select id="resHour" onchange="saveAndReset()"></select>
+            <select id="resMin" onchange="saveAndReset()"></select>
+        </div>
