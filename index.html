@@ -16,10 +16,16 @@
         }
         .time-flex { display: flex; gap: 8px; margin-bottom: 12px; }
         .pickup-box { background: #fff9f0; border: 1px solid #f39c12; padding: 12px; border-radius: 5px; margin-bottom: 12px; }
-        .btn-add { background-color: #3498db; color: white; border: none; padding: 15px; border-radius: 4px; width: 100%; font-size: 1.1em; font-weight: bold; margin-bottom: 10px; }
-        .btn-submit { background-color: #27ae60; color: white; border: none; padding: 20px; border-radius: 4px; width: 100%; font-size: 1.3em; font-weight: bold; margin-top: 10px; }
+        .btn-add { background-color: #3498db; color: white; border: none; padding: 15px; border-radius: 4px; width: 100%; font-size: 1.1em; font-weight: bold; margin-bottom: 10px; cursor: pointer; }
+        .btn-remove { background-color: #95a5a6; color: white; border: none; padding: 10px; border-radius: 4px; width: 100%; font-size: 0.9em; margin-bottom: 10px; cursor: pointer; }
+        .btn-submit { background-color: #27ae60; color: white; border: none; padding: 20px; border-radius: 4px; width: 100%; font-size: 1.3em; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .btn-submit:disabled { background-color: #95a5a6 !important; cursor: not-allowed; }
         #imgPreview { max-width: 100%; border-radius: 4px; margin-top: 10px; display: none; border: 1px solid #ddd; }
         .next-lane-badge { background: #e74c3c; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; margin-left: 5px; }
+        .success-banner { display: none; background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; text-align: center; margin-top: 15px; font-weight: bold; border: 1px solid #c3e6cb; }
+        .clear-storage { text-align: right; margin-top: 20px; }
+        .clear-storage button { background: none; border: none; color: #999; text-decoration: underline; font-size: 0.8em; cursor: pointer; }
+        .cart-item { background: #f9f9f9; border-left: 5px solid #3498db; padding: 10px; margin-bottom: 5px; font-size: 0.9em; }
     </style>
 </head>
 <body>
@@ -30,41 +36,37 @@
     <div class="section">
         <h3>1. 基本情報</h3>
         <label>団体名</label>
-        <input type="text" id="groupName" placeholder="例：株式会社サンプル">
+        <input type="text" id="groupName" placeholder="例：株式会社サンプル" oninput="saveData()">
         
         <label>予約日</label>
-        <input type="date" id="resDateOnly">
+        <input type="date" id="resDateOnly" oninput="saveData()">
 
         <label>予約時間 (5分刻み)</label>
         <div class="time-flex">
-            <select id="resHour"></select>
-            <select id="resMin"></select>
+            <select id="resHour" onchange="saveData()"></select>
+            <select id="resMin" onchange="saveData()"></select>
         </div>
 
         <div class="pickup-box">
             <label>🚌 送迎バスの希望</label>
-            <select id="pickupRequest" onchange="togglePickupInput();">
+            <select id="pickupRequest" onchange="togglePickupInput(); saveData();">
                 <option value="無し">無し</option>
                 <option value="希望する">希望する</option>
             </select>
             
             <div id="pickupDetailArea" style="display:none; margin-top:10px; border-top: 1px dashed #f39c12; padding-top:10px;">
                 <label>送迎区分</label>
-                <select id="pickupType">
+                <select id="pickupType" onchange="saveData()">
                     <option value="行きのみ">行きのみ</option>
                     <option value="帰りのみ">帰りのみ</option>
                     <option value="両方（行き・帰り）">両方（行き・帰り）</option>
                 </select>
-
                 <label>送迎場所</label>
-                <input type="text" id="pickupLocation" placeholder="例：瀬戸駅北口ロータリー">
-
-                <label>送迎希望時間（またはバス配車時間）</label>
-                <input type="text" id="pickupTime" placeholder="例：迎え12:30 / 送り16:00">
-
+                <input type="text" id="pickupLocation" placeholder="例：瀬戸駅北口ロータリー" oninput="saveData()">
+                <label>送迎希望時間</label>
+                <input type="text" id="pickupTime" placeholder="例：迎え12:30 / 送り16:00" oninput="saveData()">
                 <label>乗車予定人数</label>
-                <input type="number" id="pickupCount" placeholder="名" min="1">
-
+                <input type="number" id="pickupCount" placeholder="名" oninput="saveData()">
                 <label>場所のスクショ（任意）</label>
                 <input type="file" id="pickupImage" accept="image/*" onchange="previewImage(this)">
                 <img id="imgPreview">
@@ -72,30 +74,36 @@
         </div>
 
         <label>幹事名</label>
-        <input type="text" id="kanjiName" placeholder="お名前">
+        <input type="text" id="kanjiName" placeholder="お名前" oninput="saveData()">
         <label>電話番号</label>
-        <input type="tel" id="tel" placeholder="090-0000-0000">
+        <input type="tel" id="tel" placeholder="090-0000-0000" oninput="saveData()">
         <label>要望欄</label>
-        <textarea id="notes" placeholder="その他ご要望があればご記入ください"></textarea>
+        <textarea id="notes" placeholder="その他ご要望があればご記入ください" oninput="saveData()"></textarea>
     </div>
     
     <div class="section">
         <h3>2. メンバー入力 <span id="laneDisplay" class="next-lane-badge">リスト 1</span></h3>
         <div id="memberContainer"></div>
         <button class="btn-add" onclick="addToCart()">このメンバーをリストに追加</button>
-        <button id="removeBtn" onclick="removeLast()" style="display:none; width:100%; margin-bottom:10px;">直前を削除</button>
+        <button id="removeBtn" class="btn-remove" onclick="removeLast()" style="display:none;">直前のリストを削除</button>
     </div>
 
     <div class="section">
         <h3>3. 提出リスト (確認用)</h3>
         <div id="cartList" style="color: #7f8c8d; font-size: 0.9em; margin-bottom: 10px;">まだ追加されていません</div>
         <button id="submitBtn" class="btn-submit" onclick="submitAll()" disabled>全内容を送信する</button>
-        <div id="successBanner" style="display:none; color:green; text-align:center; font-weight:bold; margin-top:10px;">✅ 送信完了</div>
+        <div id="successBanner" class="success-banner">✅ 送信が完了しました（修正して再送も可能です）</div>
+    </div>
+
+    <div class="clear-storage">
+        <button onclick="clearAllData()">すべての入力を最初からやり直す</button>
     </div>
 </div>
 
 <script>
-    const url = "https://script.google.com/macros/s/AKfycbyP7jeq-jhBZiuxGhwLiW4uWsoYvFCRsND12MrrRGnGr3YWPTK_MZniOPUcGzzqaA/exec"; 
+    // ★ご自身のGASのデプロイURLを貼り付けてください
+    const url = "https://script.google.com/macros/s/AKfycbzIL63P9GOpYtjFeRCyZ_giLz20LU8Cw3bgUguakiEKY-6Kj_-xm080t_MccOFQNFHx/exec"; 
+    
     let cart = [];
     let base64Image = null;
 
@@ -118,6 +126,7 @@
                 base64Image = e.target.result;
                 document.getElementById('imgPreview').src = base64Image;
                 document.getElementById('imgPreview').style.display = 'block';
+                saveData();
             };
             reader.readAsDataURL(file);
         }
@@ -128,37 +137,96 @@
         container.innerHTML = "";
         for (let i = 1; i <= 4; i++) {
             container.innerHTML += `<div style="border-bottom:1px solid #eee; margin-bottom:10px; padding-bottom:5px;">
-                <label>ボウラ名 ${i}</label><input type="text" class="m-name" placeholder="氏名">
-                <div style="display:flex; gap:5px;"><select class="m-sex"><option value="1">男</option><option value="2">女</option></select>
-                <select class="m-grade"><option value="一般">一般</option><option value="中学生以下">中学生以下</option></select>
-                <select class="m-bumper"><option value="無し">無し</option><option value="有り">有り</option></select></div></div>`;
+                <label>ボウラ名 ${i}</label><input type="text" class="m-name" placeholder="氏名" oninput="saveData()">
+                <div style="display:flex; gap:5px;">
+                    <select class="m-sex" onchange="saveData()"><option value="1">男</option><option value="2">女</option></select>
+                    <select class="m-grade" onchange="saveData()"><option value="一般">一般</option><option value="中学生以下">中学生以下</option></select>
+                    <select class="m-bumper" onchange="saveData()"><option value="無し">無し</option><option value="有り">有り</option></select>
+                </div></div>`;
         }
     }
 
-    window.onload = () => { setupTimeSelect(); generateMemberInputs(); togglePickupInput(); };
+    window.onload = () => { setupTimeSelect(); generateMemberInputs(); loadData(); togglePickupInput(); render(); updateLaneBadge(); };
 
     function addToCart() {
         const names = document.getElementsByClassName('m-name');
         let members = [];
         for(let i=0; i<4; i++){
             if(names[i].value.trim()){
-                members.push({name:names[i].value, sex:document.getElementsByClassName('m-sex')[i].value, grade:document.getElementsByClassName('m-grade')[i].value, bumper:document.getElementsByClassName('m-bumper')[i].value});
+                members.push({
+                    name:names[i].value, 
+                    sex:document.getElementsByClassName('m-sex')[i].value, 
+                    grade:document.getElementsByClassName('m-grade')[i].value, 
+                    bumper:document.getElementsByClassName('m-bumper')[i].value
+                });
             }
         }
         if(!members.length){ alert("名前を入れてください"); return; }
         cart.push({lane: (cart.length + 1), members: members});
-        render(); for(let n of names) n.value = ""; 
-        document.getElementById('laneDisplay').innerText = "リスト " + (cart.length + 1);
-        document.getElementById('removeBtn').style.display = "block";
-        document.getElementById('submitBtn').disabled = false;
+        for(let n of names) n.value = ""; 
+        render(); saveData(); updateLaneBadge();
     }
 
-    function removeLast() { if(confirm("消しますか？")){ cart.pop(); render(); document.getElementById('laneDisplay').innerText = "リスト " + (cart.length + 1); } }
+    function removeLast() { if(confirm("最後に追加したリストを削除しますか？")){ cart.pop(); render(); saveData(); updateLaneBadge(); } }
+
+    function updateLaneBadge() {
+        document.getElementById('laneDisplay').innerText = "リスト " + (cart.length + 1);
+        document.getElementById('removeBtn').style.display = cart.length > 0 ? "block" : "none";
+        document.getElementById('submitBtn').disabled = cart.length === 0;
+    }
 
     function render() {
         const list = document.getElementById('cartList');
-        list.innerHTML = cart.length === 0 ? "未追加" : cart.map(item => `<div>番号${item.lane}: ${item.members.map(m=>m.name).join(', ')}</div>`).join('');
+        list.innerHTML = cart.length === 0 ? "未追加" : cart.map(item => `<div class="cart-item"><strong>番号${item.lane}:</strong> ${item.members.map(m=>m.name).join(', ')}</div>`).join('');
     }
+
+    function saveData() {
+        const data = {
+            groupName: document.getElementById('groupName').value,
+            resDateOnly: document.getElementById('resDateOnly').value,
+            resHour: document.getElementById('resHour').value,
+            resMin: document.getElementById('resMin').value,
+            pickupRequest: document.getElementById('pickupRequest').value,
+            pickupType: document.getElementById('pickupType').value,
+            pickupLocation: document.getElementById('pickupLocation').value,
+            pickupTime: document.getElementById('pickupTime').value,
+            pickupCount: document.getElementById('pickupCount').value,
+            kanjiName: document.getElementById('kanjiName').value,
+            tel: document.getElementById('tel').value,
+            notes: document.getElementById('notes').value,
+            cart: cart,
+            img: base64Image
+        };
+        localStorage.setItem('tomei_ball_data', JSON.stringify(data));
+        document.getElementById('successBanner').style.display = 'none';
+        document.getElementById('submitBtn').innerText = "全内容を送信する";
+    }
+
+    function loadData() {
+        const saved = localStorage.getItem('tomei_ball_data');
+        if (!saved) return;
+        const d = JSON.parse(saved);
+        document.getElementById('groupName').value = d.groupName || "";
+        document.getElementById('resDateOnly').value = d.resDateOnly || "";
+        document.getElementById('resHour').value = d.resHour || "";
+        document.getElementById('resMin').value = d.resMin || "";
+        document.getElementById('pickupRequest').value = d.pickupRequest || "無し";
+        document.getElementById('pickupType').value = d.pickupType || "行きのみ";
+        document.getElementById('pickupLocation').value = d.pickupLocation || "";
+        document.getElementById('pickupTime').value = d.pickupTime || "";
+        document.getElementById('pickupCount').value = d.pickupCount || "";
+        document.getElementById('kanjiName').value = d.kanjiName || "";
+        document.getElementById('tel').value = d.tel || "";
+        document.getElementById('notes').value = d.notes || "";
+        cart = d.cart || [];
+        base64Image = d.img || null;
+        if(base64Image) {
+            document.getElementById('imgPreview').src = base64Image;
+            document.getElementById('imgPreview').style.display = 'block';
+        }
+    }
+
+    function clearAllData() { if(confirm("すべての入力を消去して最初からやり直しますか？")){ localStorage.removeItem('tomei_ball_data'); location.reload(); } }
 
     async function submitAll() {
         const btn = document.getElementById('submitBtn');
@@ -179,8 +247,11 @@
         };
         try {
             await fetch(url, { method: "POST", body: JSON.stringify(payload) });
-            alert("送信しました！"); location.reload();
-        } catch (e) { alert("送信エラー"); btn.disabled = false; }
+            btn.innerText = "送信完了（再送信も可能）";
+            btn.disabled = false;
+            document.getElementById('successBanner').style.display = 'block';
+            alert("送信しました！スプレッドシートをご確認ください。");
+        } catch (e) { alert("送信エラー"); btn.disabled = false; btn.innerText = "全内容を送信する"; }
     }
 </script>
 </body>
